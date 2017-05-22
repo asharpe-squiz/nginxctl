@@ -41,7 +41,21 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+class nginx:
+    BINARY = 'nginx'
+    CONFIG_DIR = '/etc/nginx'
+    CONFIG_FILE = 'nginx.conf'
+
+class openresty:
+    BINARY = '/opt/openresty/sbin/openresty'
+    CONFIG_DIR = '/etc/openresty'
+    CONFIG_FILE = 'openresty.conf'
+
+
 class nginxCtl:
+
+    def __init__(self, target):
+        self.target = target
 
     """
     A class for nginxCtl functionalities
@@ -51,7 +65,7 @@ class nginxCtl:
         """
         Discovers installed nginx version
         """
-        version = "nginx -v"
+        version = "%s -v" % (self.target.BINARY)
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -64,7 +78,7 @@ class nginxCtl:
 
         :returns: list of nginx configuration parameters
         """
-        conf = "nginx -V 2>&1 | grep 'configure arguments:'"
+        conf = "%s -V 2>&1 | grep 'configure arguments:'" % (self.target.BINARY)
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
@@ -82,7 +96,7 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--conf-path']
         except KeyError:
-            print "nginx is not installed!!!"
+            print "%s is not installed!!!" % (self.target.__name__)
             sys.exit()
 
     def get_nginx_bin(self):
@@ -92,7 +106,7 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--sbin-path']
         except:
-            print "nginx is not installed!!!"
+            print "%s is not installed!!!" % (self.target.__name__)
             sys.exit()
 
     def get_nginx_pid(self):
@@ -103,7 +117,7 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--pid-path']
         except:
-            print "nginx is not installed!!!"
+            print "%s is not installed!!!" % (self.target.__name__)
             sys.exit()
 
     def get_nginx_lock(self):
@@ -114,7 +128,7 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--lock-path']
         except:
-            print "nginx is not installed!!!"
+            print "%s is not installed!!!" % (self.target.__name__)
             sys.exit()
 
     def start_nginx(self):
@@ -124,9 +138,9 @@ class nginxCtl:
         nginx_conf_path = self.get_nginx_conf()
         nginx_lock_path = self.get_nginx_lock()
         if os.path.exists(nginx_lock_path):
-            print "nginx is already running... Nothing to be done!"
+            print "%s is already running... Nothing to be done!!" % (self.target.__name__)
         else:
-            cmd = "nginx -c " + nginx_conf_path
+            cmd = self.target.BINARY + " -c " + nginx_conf_path
             p = subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
@@ -136,7 +150,8 @@ class nginxCtl:
             if not err:
                 file = open(nginx_lock_path, 'w')
                 file.close()
-                print "Starting nginx:\t\t\t\t\t    [ %sOK%s ]" % (
+                print "Starting %s:\t\t\t\t\t    [ %sOK%s ]" % (
+                    self.target.__name__,
                     bcolors.OKGREEN,
                     bcolors.ENDC
                     )
@@ -162,9 +177,9 @@ class nginxCtl:
                                      )
                 pid, err = p.communicate()
             except IOError:
-                print "Cannot open nginx pid file"
+                print "Cannot open %s pid file" % (self.target.__name__)
             if pid:
-                cmd = "nginx -s quit"
+                cmd = "%s -s quit" % (self.target.BINARY)
                 p = subprocess.Popen(cmd,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
@@ -174,7 +189,8 @@ class nginxCtl:
                 if not err:
                     if os.path.exists(nginx_lock_path):
                         os.remove(nginx_lock_path)
-                    print "Stoping nginx:\t\t\t\t\t    [  %sOK%s  ]" % (
+                    print "Stoping %s:\t\t\t\t\t    [  %sOK%s  ]" % (
+                        self.target.__name__,
                         bcolors.OKGREEN,
                         bcolors.ENDC
                         )
@@ -187,7 +203,7 @@ class nginxCtl:
         The 'nginx -t' command is used for this.
         """
         p = subprocess.Popen(
-            "nginx -t",
+            "%s -t" % (self.target.BINARY),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True
@@ -210,22 +226,26 @@ class nginxCtl:
             request = urllib2.urlopen('http://localhost/server-status')
             if str(request.getcode()) == "200":
                 print """
-Nginx Server Status
+%s Server Status
 -------------------
 %s
-                    """ % request.read()
+                    """ % (
+                        self.target.__name__,
+                        request.read()
+                    )
             else:
                 print """
-Nginx Server Status
+%s Server Status
 -------------------
 server-status did not return a 200 response.
-                    """
+                    """ % self.target.__name__
+
         except (urllib2.HTTPError, urllib2.URLError):
             print """
-Nginx Server Status
+%s Server Status
 -------------------
 Attempt to query /server-status returned an error
-                """
+                """ % self.target.__name__
 
     def status_nginx(self):
         """
@@ -246,14 +266,14 @@ Attempt to query /server-status returned an error
                     shell=True)
                 output, err = p.communicate()
                 if output:
-                    print "nginx (pid %s) is running ..." % pid
+                    print "%s (pid %s) is running ..." % (self.target.__name__, pid)
             except IOError:
-                print "Cannot open nginx pid file"
+                print "Cannot open %s pid file" % self.target.__name__
         elif (os.path.exists(nginx_lock_path) and not
                 os.path.exists(nginx_pid_path)):
-            print "nginx pid file exists"
+            print "%s pid file exists" % self.target.__name__
         else:
-            print "nginx is stopped"
+            print "%s is stopped" % self.target.__name__
 
     def _get_vhosts(self):
         """
@@ -337,7 +357,7 @@ Attempt to query /server-status returned an error
         Reads all config files, starting from the main one, expands all
         includes and returns all config in the correct order as a list.
         """
-        config_file = "/etc/nginx/nginx.conf" if config_file is None else config_file
+        config_file = (self.target.CONFIG_DIR + '/' + self.target.CONFIG_FILE) if config_file is None else config_file
         ret = [config_file]
 
         config_data = open(config_file, 'r').readlines()
@@ -349,7 +369,7 @@ Attempt to query /server-status returned an error
             if line.startswith('include'):
                 includes = self._get_includes_line(line,
                                                    config_file,
-                                                   "/etc/nginx/")
+                                                   self.target.CONFIG_DIR)
                 for include in includes:
                     try:
                         ret += self._get_all_config(include)
@@ -417,7 +437,7 @@ Attempt to query /server-status returned an error
 
     def get_vhosts(self):
         vhosts_list = self._get_vhosts()
-        print "%snginx vhost configuration:%s" % (bcolors.BOLD, bcolors.ENDC)
+        print "%s%s vhost configuration:%s" % (bcolors.BOLD, self.target.__name__, bcolors.ENDC)
         for vhost in vhosts_list:
             ip_ports = vhost['ip_port']
             for ip_port_x in ip_ports:
@@ -452,7 +472,7 @@ Attempt to query /server-status returned an error
 
 
 def main():
-    n = nginxCtl()
+    n = nginxCtl(openresty)
 
     def usage():
         print ("Usage: %s [option]" % sys.argv[0])
