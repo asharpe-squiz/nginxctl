@@ -404,7 +404,8 @@ Attempt to query /server-status returned an error
                 l = l.split('#')[0]
 
                 if not l.strip().endswith(';'):
-                    stored += l + ' '
+                    if line_num != server_block[0]:
+                        stored += l.strip() + ' '
                     continue
                 else:
                     l = stored + l
