@@ -230,7 +230,7 @@ class nginxCtl:
 -------------------
 %s
                     """ % (
-                        self.target.__name__,
+                        self.target.__name__.title(),
                         request.read()
                     )
             else:
@@ -238,14 +238,14 @@ class nginxCtl:
 %s Server Status
 -------------------
 server-status did not return a 200 response.
-                    """ % self.target.__name__
+                    """ % self.target.__name__.title()
 
         except (urllib2.HTTPError, urllib2.URLError):
             print """
 %s Server Status
 -------------------
 Attempt to query /server-status returned an error
-                """ % self.target.__name__
+                """ % self.target.__name__.title()
 
     def status_nginx(self):
         """
@@ -437,7 +437,7 @@ Attempt to query /server-status returned an error
 
     def get_vhosts(self):
         vhosts_list = self._get_vhosts()
-        print "%s%s vhost configuration:%s" % (bcolors.BOLD, self.target.__name__, bcolors.ENDC)
+        print "%s%s vhost configuration:%s" % (bcolors.BOLD, self.target.__name__.title(), bcolors.ENDC)
         for vhost in vhosts_list:
             ip_ports = vhost['ip_port']
             for ip_port_x in ip_ports:
@@ -471,8 +471,11 @@ Attempt to query /server-status returned an error
                                                   bcolors.ENDC)
 
 
-def main():
-    n = nginxCtl(openresty)
+def main(name = 'nginxctl'):
+    if re.search(r"resty", name):
+        n = nginxCtl(openresty)
+    else:
+        n = nginxCtl(nginx)
 
     def usage():
         print ("Usage: %s [option]" % sys.argv[0])
@@ -526,4 +529,4 @@ def main():
     else:
         usage()
 if __name__ == "__main__":
-    main()
+    main(sys.argv[0])
