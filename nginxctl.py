@@ -40,6 +40,18 @@ class bcolors:
     CYAN = '\033[96m'
     UNDERLINE = '\033[4m'
 
+    @classmethod
+    def remove(cls):
+        cls.HEADER = ''
+        cls.OKBLUE = ''
+        cls.OKGREEN = ''
+        cls.WARNING = ''
+        cls.FAIL = ''
+        cls.ENDC = ''
+        cls.BOLD = ''
+        cls.CYAN = ''
+        cls.UNDERLINE = ''
+
 
 class nginxCtl:
 
@@ -506,4 +518,6 @@ def main():
     else:
         usage()
 if __name__ == "__main__":
+    if not sys.stdout.isatty():
+        bcolors.remove()
     main()
