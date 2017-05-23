@@ -9,12 +9,12 @@ class nginxCtlTests(unittest.TestCase):
         """ Test line can be stripped"""
         test_str = '''"nginxCtl 'is' an amzing tool;'''
         result_test_str = "nginxCtl is an amzing tool"
-        n = nginxctl.nginxCtl()
+        n = nginxctl.nginxCtl(nginxctl.nginx)
         self.assertEqual(n._strip_line(test_str), result_test_str)
 
     @mock.patch('nginxctl.nginxCtl.get_conf_parameters')
     def test_nginx_conf(self, conf_param):
-        n = nginxctl.nginxCtl()
+        n = nginxctl.nginxCtl(nginxctl.nginx)
         conf_param.return_value = {'--conf-path': '/etc/nginx/nginx.conf',
                                    '--lock-path': '/var/lock/nginx.lock'}
         assert n.get_nginx_conf() == '/etc/nginx/nginx.conf'
@@ -44,7 +44,7 @@ class nginxCtlTests(unittest.TestCase):
         vhost_file = tempfile.NamedTemporaryFile(delete=False)
         vhost_file.write(test_vhost_content)
         vhost_file.seek(0)
-        n = nginxctl.nginxCtl()
+        n = nginxctl.nginxCtl(nginxctl.nginx)
         vhost_info = n._get_vhosts_info(vhost_file.name)
         servername = vhost_info[0]['servername']
         ip_port = vhost_info[0]['ip_port']
